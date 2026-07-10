@@ -1,4 +1,4 @@
-name: RPS Arena — haftalık benchmark
+name: RPS Arena â€” haftalÄ±k benchmark
 
 on:
   schedule:
@@ -15,12 +15,39 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # 1) Her Node sÃ¼rÃ¼mÃ¼ kendi sonucunu ARTIFACT olarak Ã¼retir â€” kimse commit atmaz
   bench:
     runs-on: ubuntu-latest
     strategy:
-      max-parallel: 1        # sonuç dosyasına sırayla yazılır — yarış yok
+      fail-fast: false
       matrix:
         node: [22, 24, 26]
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: BaÄŸÄ±mlÄ±lÄ±klar
+        run: npm ci
+
+      - name: Testler (geÃ§meden benchmark yok)
+        run: npm test
+
+      - name: Benchmark koÅŸ
+        run: node bench/runner.js --label "node-${{ matrix.node }}" --out "run-node-${{ matrix.node }}.json"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: run-node-${{ matrix.node }}
+          path: run-node-${{ matrix.node }}.json
+          retention-days: 7
+
+  # 2) Tek job hepsini birleÅŸtirir, TEK commit atar â€” yarÄ±ÅŸ koÅŸulu imkÃ¢nsÄ±z
+  collect:
+    needs: bench
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
@@ -28,28 +55,28 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: ${{ matrix.node }}
+          node-version: 22
 
-      - name: Bağımlılıklar
-        run: npm ci
+      - uses: actions/download-artifact@v4
+        with:
+          path: tmp_runs
+          merge-multiple: true
 
-      - name: Testler (geçmeden benchmark yok)
-        run: npm test
+      - name: SonuÃ§larÄ± birleÅŸtir (ÅŸema doÄŸrulamalÄ±)
+        run: node bench/merge.js tmp_runs/run-node-*.json
 
-      - name: Benchmark koş
-        run: node bench/runner.js --append --label "node-${{ matrix.node }}"
-
-      - name: Sonucu commit'le
+      - name: Tek commit + push
         run: |
           git config user.name "rps-arena-bot"
           git config user.email "bot@users.noreply.github.com"
-          git pull --rebase origin main
           git add results/results.json
-          git diff --cached --quiet || git commit -m "bench: node ${{ matrix.node }} sonuçları ($(date -u +%Y-%m-%d))"
+          git diff --cached --quiet && echo "deÄŸiÅŸiklik yok" && exit 0
+          git commit -m "bench: haftalÄ±k sonuÃ§lar ($(date -u +%Y-%m-%d))"
           git push origin main
 
+  # 3) Panoyu yayÄ±nla
   deploy:
-    needs: bench
+    needs: collect
     runs-on: ubuntu-latest
     environment:
       name: github-pages
@@ -59,8 +86,9 @@ jobs:
         with:
           ref: main
 
-      - name: Site paketini hazırla
+      - name: Site paketini hazÄ±rla
         run: |
+          git pull origin main
           mkdir -p _site
           cp site/index.html _site/index.html
           cp results/results.json _site/results.json
