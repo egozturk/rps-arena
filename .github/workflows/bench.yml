@@ -1,0 +1,73 @@
+name: RPS Arena — haftalık benchmark
+
+on:
+  schedule:
+    - cron: '0 6 * * 1'   # her pazartesi 06:00 UTC
+  workflow_dispatch: {}     # elle tetikleme
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: bench
+  cancel-in-progress: false
+
+jobs:
+  bench:
+    runs-on: ubuntu-latest
+    strategy:
+      max-parallel: 1        # sonuç dosyasına sırayla yazılır — yarış yok
+      matrix:
+        node: [22, 24, 26]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: Bağımlılıklar
+        run: npm ci
+
+      - name: Testler (geçmeden benchmark yok)
+        run: npm test
+
+      - name: Benchmark koş
+        run: node bench/runner.js --append --label "node-${{ matrix.node }}"
+
+      - name: Sonucu commit'le
+        run: |
+          git config user.name "rps-arena-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git pull --rebase origin main
+          git add results/results.json
+          git diff --cached --quiet || git commit -m "bench: node ${{ matrix.node }} sonuçları ($(date -u +%Y-%m-%d))"
+          git push origin main
+
+  deploy:
+    needs: bench
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Site paketini hazırla
+        run: |
+          mkdir -p _site
+          cp site/index.html _site/index.html
+          cp results/results.json _site/results.json
+
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+      - id: deployment
+        uses: actions/deploy-pages@v4

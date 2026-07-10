@@ -1,0 +1,61 @@
+{
+  "schemaVersion": 1,
+  "runs": [
+    {
+      "meta": {
+        "label": "node-22 (yerel)",
+        "node": "v22.22.2",
+        "date": "2026-07-10T20:59:53.528Z",
+        "cpu": "Intel(R) Xeon(R) Processor @ 2.80GHz",
+        "cores": 2,
+        "platform": "linux-x64"
+      },
+      "entries": [
+        {
+          "scenario": "S1",
+          "name": "Düz metin (13B)",
+          "runs_rps": [
+            13786,
+            13366,
+            13431
+          ],
+          "median_rps": 13431,
+          "p99_ms": 14
+        },
+        {
+          "scenario": "S2",
+          "name": "JSON API (~1KB)",
+          "runs_rps": [
+            13146,
+            13205,
+            12121
+          ],
+          "median_rps": 13146,
+          "p99_ms": 15
+        },
+        {
+          "scenario": "S3",
+          "name": "Çok başlık (12 adet + çerez)",
+          "runs_rps": [
+            13036,
+            12376,
+            12713
+          ],
+          "median_rps": 12713,
+          "p99_ms": 15
+        },
+        {
+          "scenario": "S4",
+          "name": "Büyük gövde (64KB)",
+          "runs_rps": [
+            5400,
+            5206,
+            5580
+          ],
+          "median_rps": 5400,
+          "p99_ms": 31
+        }
+      ]
+    }
+  ]
+}

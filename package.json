@@ -1,0 +1,13 @@
+{
+  "name": "rps-arena",
+  "version": "1.0.0",
+  "description": "Node.js sürümlerini sabit HTTP senaryolarında otomatik benchmark'layan canlı pano",
+  "license": "MIT",
+  "scripts": {
+    "test": "node --test",
+    "bench": "node bench/runner.js --append"
+  },
+  "dependencies": {
+    "autocannon": "^8.0.0"
+  }
+}

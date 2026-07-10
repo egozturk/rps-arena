@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>RPS Arena — Node.js Benchmark Panosu</title>
+<style>
+  :root {
+    --page:#0d0d0d; --surface:#1a1a19; --ink:#fff; --ink2:#c3c2b7; --muted:#898781;
+    --grid:#2c2c2a; --border:rgba(255,255,255,.1);
+    --c1:#3987e5; --c2:#199e70; --c3:#c98500; --c4:#9085e9; --c5:#e66767;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--page); color:var(--ink); min-height:100vh;
+    font-family:'Segoe UI', system-ui, sans-serif; padding:36px clamp(16px,4vw,56px); }
+  .kicker { display:flex; align-items:center; gap:10px; font-size:13px; font-weight:600;
+    letter-spacing:2.5px; color:var(--ink2); text-transform:uppercase; }
+  .kicker .dot { width:9px; height:9px; border-radius:50%; background:var(--c2); }
+  h1 { font-size:clamp(26px,4vw,40px); font-weight:800; letter-spacing:-.5px; margin:12px 0 4px; }
+  .sub { color:var(--ink2); font-size:15px; max-width:760px; line-height:1.5; }
+  .sub b { color:var(--ink); }
+  #demoBadge { display:none; margin-top:12px; background:rgba(201,133,0,.14);
+    border:1px solid rgba(201,133,0,.45); color:#ecc06a; border-radius:10px;
+    padding:8px 14px; font-size:13px; font-weight:600; width:fit-content; }
+  .meta { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+  .chip { background:var(--surface); border:1px solid var(--border); border-radius:10px;
+    padding:7px 13px; font-size:12.5px; color:var(--ink2); font-weight:600; }
+  .chip b { color:var(--ink); }
+  .panels { display:grid; grid-template-columns:repeat(auto-fit,minmax(420px,1fr)); gap:18px; margin-top:26px; }
+  .panel { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:20px 22px; }
+  .pt { font-size:12.5px; font-weight:600; letter-spacing:1.5px; color:var(--muted);
+    text-transform:uppercase; margin-bottom:4px; }
+  .pd { font-size:12.5px; color:var(--muted); margin-bottom:16px; }
+  .brow { display:grid; grid-template-columns:120px 1fr 84px; align-items:center; gap:10px; margin-bottom:12px; }
+  .bl { font-size:13.5px; font-weight:700; color:var(--ink); }
+  .track { height:16px; }
+  .fill { height:100%; border-radius:0 3px 3px 0; min-width:2px; }
+  .bv { font-size:13px; font-weight:800; text-align:right; font-variant-numeric:tabular-nums; }
+  .bv span { font-size:10px; color:var(--muted); font-weight:600; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; margin:18px 0 4px; }
+  .li { display:flex; align-items:center; gap:7px; font-size:12.5px; color:var(--ink2); font-weight:600; }
+  .sw { width:11px; height:11px; border-radius:3px; }
+  svg text { font-family:inherit; }
+  footer { margin-top:34px; padding-top:16px; border-top:1px solid var(--grid);
+    display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px;
+    font-size:13px; color:var(--muted); font-weight:600; }
+  footer a { color:var(--c1); text-decoration:none; }
+  .note { font-size:11.5px; color:var(--muted); margin-top:14px; line-height:1.5; }
+</style>
+</head>
+<body>
+  <div class="kicker"><span class="dot"></span> Rich Kids of AI · Canlı Pano</div>
+  <h1>⚡ RPS Arena</h1>
+  <div class="sub">Node.js sürümleri, sabit HTTP senaryolarında düzenli olarak ölçülür; sonuçlar buraya otomatik düşer. <b>Duyum yok, ölçüm var.</b></div>
+  <div id="demoBadge">⚠ results.json bulunamadı — örnek (demo) verisi gösteriliyor</div>
+  <div class="meta" id="meta"></div>
+  <div class="legend" id="legend"></div>
+  <div class="panels" id="panels"></div>
+  <div class="note">Protokol: senaryo başına 5 sn ısınma + 10 sn'lik 3 koşu, <b>medyan</b> alınır (autocannon · 100 bağlantı). Paylaşımlı CI donanımında mutlak değerler oynayabilir; anlamlı olan aynı koşudaki sürümler arası <b>göreli</b> farktır.</div>
+  <footer><span>RPS Arena — açık kaynak topluluk altyapısı</span><span>Rich Kids of AI</span></footer>
+
+<script>
+const COLORS = ['var(--c1)','var(--c2)','var(--c3)','var(--c4)','var(--c5)'];
+
+const DEMO = {
+  schemaVersion: 1,
+  runs: [
+    { meta:{label:'node-22',node:'v22.22.0',date:'2026-07-06T06:00:00Z',cpu:'demo',cores:4,platform:'linux-x64'},
+      entries:[
+        {scenario:'S1',name:'Düz metin (13B)',runs_rps:[41200,41900,41500],median_rps:41500,p99_ms:4},
+        {scenario:'S2',name:'JSON API (~1KB)',runs_rps:[36100,36600,36400],median_rps:36400,p99_ms:5},
+        {scenario:'S3',name:'Çok başlık',runs_rps:[30100,30800,30500],median_rps:30500,p99_ms:6},
+        {scenario:'S4',name:'Büyük gövde (64KB)',runs_rps:[7050,7150,7100],median_rps:7100,p99_ms:19}]},
+    { meta:{label:'node-24',node:'v24.9.0',date:'2026-07-06T06:10:00Z',cpu:'demo',cores:4,platform:'linux-x64'},
+      entries:[
+        {scenario:'S1',name:'Düz metin (13B)',runs_rps:[44100,44800,44400],median_rps:44400,p99_ms:4},
+        {scenario:'S2',name:'JSON API (~1KB)',runs_rps:[38800,39400,39000],median_rps:39000,p99_ms:5},
+        {scenario:'S3',name:'Çok başlık',runs_rps:[32600,33300,33000],median_rps:33000,p99_ms:5},
+        {scenario:'S4',name:'Büyük gövde (64KB)',runs_rps:[7180,7300,7250],median_rps:7250,p99_ms:18}]},
+    { meta:{label:'node-26',node:'v26.5.0',date:'2026-07-06T06:20:00Z',cpu:'demo',cores:4,platform:'linux-x64'},
+      entries:[
+        {scenario:'S1',name:'Düz metin (13B)',runs_rps:[47900,48700,48300],median_rps:48300,p99_ms:3},
+        {scenario:'S2',name:'JSON API (~1KB)',runs_rps:[41800,42500,42100],median_rps:42100,p99_ms:4},
+        {scenario:'S3',name:'Çok başlık',runs_rps:[35400,36100,35800],median_rps:35800,p99_ms:5},
+        {scenario:'S4',name:'Büyük gövde (64KB)',runs_rps:[7350,7480,7400],median_rps:7400,p99_ms:18}]}
+  ]
+};
+
+async function loadData() {
+  for (const url of ['results.json', '../results/results.json']) {
+    try {
+      const r = await fetch(url);
+      if (r.ok) { const d = await r.json(); if (d && Array.isArray(d.runs) && d.runs.length) return d; }
+    } catch (e) { /* sıradakini dene */ }
+  }
+  document.getElementById('demoBadge').style.display = 'block';
+  return DEMO;
+}
+
+function latestPerLabel(runs) {
+  const map = new Map();
+  for (const r of runs) map.set(r.meta.label, r); // sıralı: sonuncu kazanır
+  return [...map.values()];
+}
+
+function fmt(n) { return n >= 1000 ? (n/1000).toFixed(1).replace('.', ',') + 'k' : String(n); }
+
+function render(doc) {
+  const latest = latestPerLabel(doc.runs);
+  const labels = latest.map(r => r.meta.label);
+  const colorOf = Object.fromEntries(labels.map((l, i) => [l, COLORS[i % COLORS.length]]));
+
+  // meta çipleri (en yeni koşudan)
+  const m = latest[latest.length - 1].meta;
+  document.getElementById('meta').innerHTML = [
+    `Son koşu: <b>${new Date(m.date).toLocaleDateString('tr-TR')}</b>`,
+    `Ortam: <b>${m.platform}</b> · ${m.cores} çekirdek`,
+    `Toplam kayıt: <b>${doc.runs.length}</b> koşu`,
+  ].map(x => `<div class="chip">${x}</div>`).join('');
+
+  document.getElementById('legend').innerHTML = labels.map(l =>
+    `<div class="li"><span class="sw" style="background:${colorOf[l]}"></span>${l}</div>`).join('');
+
+  // senaryo panelleri — her senaryoda sürüm karşılaştırma barları
+  const scenarioIds = [...new Set(latest.flatMap(r => r.entries.map(e => e.scenario)))].sort();
+  const panels = [];
+  for (const sid of scenarioIds) {
+    const rows = latest.map(r => {
+      const e = r.entries.find(x => x.scenario === sid);
+      return e ? { label: r.meta.label, e } : null;
+    }).filter(Boolean);
+    if (!rows.length) continue;
+    const name = rows[0].e.name || sid;
+    const max = Math.max(...rows.map(r => r.e.median_rps));
+    const bars = rows.map(r => `
+      <div class="brow">
+        <div class="bl">${r.label}</div>
+        <div class="track"><div class="fill" style="width:${(r.e.median_rps / max * 100).toFixed(1)}%; background:${colorOf[r.label]}"></div></div>
+        <div class="bv">${fmt(r.e.median_rps)} <span>rps</span></div>
+      </div>`).join('');
+    panels.push(`<div class="panel"><div class="pt">${sid} · ${name}</div><div class="pd">medyan RPS — yüksek iyi · p99: ${rows.map(r => `${r.label} ${r.e.p99_ms}ms`).join(' · ')}</div>${bars}</div>`);
+  }
+
+  // zaman serisi — S1 için etikete göre çizgi (kayıt >= 2 koşuysa)
+  const s1hist = {};
+  for (const r of doc.runs) {
+    const e = r.entries.find(x => x.scenario === 'S1');
+    if (!e) continue;
+    (s1hist[r.meta.label] ||= []).push({ t: Date.parse(r.meta.date), v: e.median_rps });
+  }
+  const withHistory = Object.entries(s1hist).filter(([, pts]) => pts.length >= 2);
+  if (withHistory.length) {
+    const all = withHistory.flatMap(([, p]) => p);
+    const t0 = Math.min(...all.map(p => p.t)), t1 = Math.max(...all.map(p => p.t));
+    const v1 = Math.max(...all.map(p => p.v));
+    const W = 520, H = 180, PX = 12, PY = 14;
+    const X = t => t1 === t0 ? W / 2 : PX + (t - t0) / (t1 - t0) * (W - 2 * PX);
+    const Y = v => H - PY - (v / v1) * (H - 2 * PY);
+    const lines = withHistory.map(([label, pts]) => {
+      const d = pts.sort((a, b) => a.t - b.t).map((p, i) => `${i ? 'L' : 'M'}${X(p.t).toFixed(1)},${Y(p.v).toFixed(1)}`).join(' ');
+      const dots = pts.map(p => `<circle cx="${X(p.t).toFixed(1)}" cy="${Y(p.v).toFixed(1)}" r="3.5" fill="${colorOf[label] || 'var(--c1)'}"/>`).join('');
+      return `<path d="${d}" fill="none" stroke="${colorOf[label] || 'var(--c1)'}" stroke-width="2"/>${dots}`;
+    }).join('');
+    panels.push(`<div class="panel"><div class="pt">Zaman serisi · S1 düz metin</div><div class="pd">koşular biriktikçe eğilim (medyan RPS)</div><svg viewBox="0 0 ${W} ${H}" style="width:100%"><line x1="${PX}" y1="${H - PY}" x2="${W - PX}" y2="${H - PY}" stroke="var(--grid)" stroke-width="1"/>${lines}</svg></div>`);
+  }
+
+  document.getElementById('panels').innerHTML = panels.join('');
+}
+
+loadData().then(render);
+</script>
+</body>
+</html>
