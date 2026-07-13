@@ -224,6 +224,174 @@
           "p99_ms": 8
         }
       ]
+    },
+    {
+      "meta": {
+        "label": "node-22",
+        "node": "v22.23.1",
+        "date": "2026-07-13T09:38:32.964Z",
+        "cpu": "INTEL(R) XEON(R) PLATINUM 8573C",
+        "cores": 4,
+        "platform": "linux-x64"
+      },
+      "entries": [
+        {
+          "scenario": "S1",
+          "name": "Düz metin (13B)",
+          "runs_rps": [
+            41523,
+            42125,
+            40883
+          ],
+          "median_rps": 41523,
+          "p99_ms": 3
+        },
+        {
+          "scenario": "S2",
+          "name": "JSON API (~1KB)",
+          "runs_rps": [
+            38074,
+            38298,
+            38218
+          ],
+          "median_rps": 38218,
+          "p99_ms": 3
+        },
+        {
+          "scenario": "S3",
+          "name": "Çok başlık (12 adet + çerez)",
+          "runs_rps": [
+            33689,
+            34051,
+            34579
+          ],
+          "median_rps": 34051,
+          "p99_ms": 3
+        },
+        {
+          "scenario": "S4",
+          "name": "Büyük gövde (64KB)",
+          "runs_rps": [
+            20382,
+            20386,
+            20520
+          ],
+          "median_rps": 20386,
+          "p99_ms": 5
+        }
+      ]
+    },
+    {
+      "meta": {
+        "label": "node-24",
+        "node": "v24.18.0",
+        "date": "2026-07-13T09:38:34.321Z",
+        "cpu": "AMD EPYC 9V74 80-Core Processor",
+        "cores": 4,
+        "platform": "linux-x64"
+      },
+      "entries": [
+        {
+          "scenario": "S1",
+          "name": "Düz metin (13B)",
+          "runs_rps": [
+            31181,
+            31022,
+            30939
+          ],
+          "median_rps": 31022,
+          "p99_ms": 3
+        },
+        {
+          "scenario": "S2",
+          "name": "JSON API (~1KB)",
+          "runs_rps": [
+            28531,
+            28744,
+            28806
+          ],
+          "median_rps": 28744,
+          "p99_ms": 4
+        },
+        {
+          "scenario": "S3",
+          "name": "Çok başlık (12 adet + çerez)",
+          "runs_rps": [
+            27072,
+            27438,
+            27424
+          ],
+          "median_rps": 27424,
+          "p99_ms": 4
+        },
+        {
+          "scenario": "S4",
+          "name": "Büyük gövde (64KB)",
+          "runs_rps": [
+            13595,
+            13622,
+            13470
+          ],
+          "median_rps": 13595,
+          "p99_ms": 10
+        }
+      ]
+    },
+    {
+      "meta": {
+        "label": "node-26",
+        "node": "v26.5.0",
+        "date": "2026-07-13T09:38:37.004Z",
+        "cpu": "AMD EPYC 7763 64-Core Processor",
+        "cores": 4,
+        "platform": "linux-x64"
+      },
+      "entries": [
+        {
+          "scenario": "S1",
+          "name": "Düz metin (13B)",
+          "runs_rps": [
+            17725,
+            17690,
+            17925
+          ],
+          "median_rps": 17725,
+          "p99_ms": 6
+        },
+        {
+          "scenario": "S2",
+          "name": "JSON API (~1KB)",
+          "runs_rps": [
+            16348,
+            16550,
+            16595
+          ],
+          "median_rps": 16550,
+          "p99_ms": 7
+        },
+        {
+          "scenario": "S3",
+          "name": "Çok başlık (12 adet + çerez)",
+          "runs_rps": [
+            14966,
+            15046,
+            15182
+          ],
+          "median_rps": 15046,
+          "p99_ms": 7
+        },
+        {
+          "scenario": "S4",
+          "name": "Büyük gövde (64KB)",
+          "runs_rps": [
+            10071,
+            10187,
+            10395
+          ],
+          "median_rps": 10187,
+          "p99_ms": 11
+        }
+      ]
     }
   ]
 }
